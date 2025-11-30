@@ -1,0 +1,68 @@
+<resources>
+    <string name="app_name">Daily Doodle Chain</string>
+    
+    <!-- Auth -->
+    <string name="sign_in">Sign In</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="display_name">Display Name</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    
+    <!-- Navigation -->
+    <string name="feed">Feed</string>
+    <string name="create">Create</string>
+    <string name="profile">Profile</string>
+    
+    <!-- Chain -->
+    <string name="create_chain">Create Chain</string>
+    <string name="add_panel">Add Panel</string>
+    <string name="seed_prompt">Seed Prompt</string>
+    <string name="enter_prompt">Enter a prompt to start your chain</string>
+    <string name="submit">Submit</string>
+    <string name="cancel">Cancel</string>
+    <string name="save_draft">Save Draft</string>
+    
+    <!-- Drawing -->
+    <string name="brush">Brush</string>
+    <string name="color">Color</string>
+    <string name="undo">Undo</string>
+    <string name="clear">Clear</string>
+    <string name="hint">Hint</string>
+    <string name="get_hint">Get Hint</string>
+    <string name="unlock_premium_brush">Unlock Premium Brush</string>
+    
+    <!-- Feed -->
+    <string name="recent">Recent</string>
+    <string name="popular">Popular</string>
+    <string name="featured">Featured</string>
+    <string name="no_chains">No chains yet. Be the first to create one!</string>
+    
+    <!-- Sharing -->
+    <string name="share_chain">Share Chain</string>
+    <string name="share_comic">Share this comic!</string>
+    
+    <!-- Moderation -->
+    <string name="report">Report</string>
+    <string name="report_reason">Reason for reporting</string>
+    
+    <!-- Ads -->
+    <string name="watch_ad_for_hint">Watch an ad to unlock a hint</string>
+    <string name="watch_ad_for_brush">Watch an ad to unlock a premium brush</string>
+    
+    <!-- Onboarding -->
+    <string name="welcome">Welcome to Daily Doodle Chain</string>
+    <string name="onboarding_step1">Draw one panel</string>
+    <string name="onboarding_step2">Add your name</string>
+    <string name="onboarding_step3">Share it</string>
+    <string name="get_started">Get Started</string>
+    <string name="skip">Skip</string>
+    <string name="next">Next</string>
+    
+    <!-- Errors -->
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="error_auth">Authentication failed. Please try again.</string>
+    <string name="error_upload">Failed to upload image. Please try again.</string>
+    <string name="error_network">Network error. Please check your connection.</string>
+</resources>

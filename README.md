@@ -1,0 +1,185 @@
+# Daily Doodle Chain
+
+A lightweight social creativity app where each user contributes exactly one panel (a single-image doodle) to an evolving chain-story started by a short prompt. Chains are shareable comic strips that surface creativity, low-friction collaboration, and daily habit formation.
+
+## Features
+
+- **Frictionless Sign-In**: Firebase Auth with email and Google sign-in
+- **Create & Join Chains**: View seed prompts, create chains, or add panels to open chains
+- **Drawing Canvas**: Minimal drawing interface with brush, color palette, undo, clear, and save draft
+- **Feed**: Browse recent, popular, and featured chains with pagination
+- **Chain Viewer**: Swipe through panels in a chain
+- **Sharing**: Share completed chains as images
+- **AdMob Integration**: Rewarded ads (hint unlock), interstitial ads, and banner/native ads
+- **Moderation**: Report button per panel and basic profanity filtering
+- **Analytics**: Firebase Analytics tracking for key events
+
+## Tech Stack
+
+- **Language**: Kotlin
+- **UI**: Jetpack Compose
+- **Backend**: Firebase (Auth, Firestore, Storage, Analytics, Crashlytics)
+- **Ads**: AdMob (Rewarded, Interstitial, Banner/Native)
+- **Image Loading**: Coil
+- **Navigation**: Navigation Compose
+
+## Setup Instructions
+
+### Prerequisites
+
+- Android Studio Arctic Fox or later
+- Android SDK 24+ (minSdk: 24, targetSdk: 36)
+- Firebase project with the following services enabled:
+  - Authentication (Email/Password and Google Sign-In)
+  - Cloud Firestore
+  - Cloud Storage
+  - Analytics
+  - Crashlytics
+- AdMob account with ad unit IDs
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd DailyDoodle
+   ```
+
+2. Add your Firebase configuration:
+   - Download `google-services.json` from your Firebase console
+   - Place it in `app/google-services.json`
+   - Update the package name in Firebase if needed
+
+3. Configure AdMob:
+   - Update `app/src/main/res/values/strings.xml` with your AdMob App ID
+   - Update ad unit IDs in `app/src/main/java/com/example/dailydoodle/ui/admob/AdMobManager.kt`
+
+4. Build and run:
+   ```bash
+   ./gradlew build
+   ```
+
+## Project Structure
+
+```
+app/src/main/java/com/example/dailydoodle/
+├── data/
+│   ├── model/          # Data models (User, Chain, Panel, etc.)
+│   └── repository/     # Repository classes for data access
+├── di/                 # Dependency injection
+├── navigation/         # Navigation setup
+├── ui/
+│   ├── screen/         # UI screens (Auth, Feed, Drawing, etc.)
+│   ├── viewmodel/      # ViewModels
+│   └── theme/          # App theme
+├── util/               # Utility classes (Analytics, etc.)
+└── admob/              # AdMob integration
+```
+
+## Firebase Security Rules
+
+### Firestore Rules
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Chains collection
+    match /chains/{chainId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      
+      // Panels subcollection
+      match /panels/{panelId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null;
+        allow update, delete: if false; // Only admins can modify
+      }
+    }
+    
+    // Moderation reports
+    match /moderation_reports/{reportId} {
+      allow create: if request.auth != null;
+      allow read, update: if false; // Only admins
+    }
+  }
+}
+```
+
+### Storage Rules
+
+```javascript
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /panels/{chainId}/{imageId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.resource.size < 2 * 1024 * 1024 // 2MB limit
+        && request.resource.contentType.matches('image/.*');
+    }
+  }
+}
+```
+
+## Building Release APK
+
+1. Generate a keystore:
+   ```bash
+   keytool -genkey -v -keystore daily-doodle-release.keystore -alias daily-doodle -keyalg RSA -keysize 2048 -validity 10000
+   ```
+
+2. Create `keystore.properties` in the project root:
+   ```properties
+   storePassword=your-store-password
+   keyPassword=your-key-password
+   keyAlias=daily-doodle
+   storeFile=daily-doodle-release.keystore
+   ```
+
+3. Update `app/build.gradle.kts` with signing config (see Android documentation)
+
+4. Build release APK:
+   ```bash
+   ./gradlew assembleRelease
+   ```
+
+## Analytics Events
+
+The app tracks the following events via Firebase Analytics:
+
+- `sign_up` - User signs up
+- `sign_in` - User signs in
+- `feed_open` - User opens feed
+- `chain_opened` - User opens a chain
+- `panel_added` - User adds a panel
+- `panel_shared` - User shares a chain
+- `rewarded_ad_view` - User watches a rewarded ad
+- `interstitial_ad_shown` - Interstitial ad is shown
+- `purchase_made` - User makes an in-app purchase
+- `report_submitted` - User submits a moderation report
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+This is a contest submission project. For contributions, please follow the Apache 2.0 license terms.
+
+## Contact
+
+For questions or issues, please open an issue in the repository.
+
+## Acknowledgments
+
+- Firebase team for excellent backend services
+- Jetpack Compose team for modern UI framework
+- AdMob for monetization platform
