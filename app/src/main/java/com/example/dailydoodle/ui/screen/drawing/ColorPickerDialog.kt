@@ -8,11 +8,14 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -26,6 +29,8 @@ fun ColorPickerDialog(
     hasPremiumBrush: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    var showCustomColorPicker by remember { mutableStateOf(false) }
+    
     if (showDialog) {
         Dialog(onDismissRequest = onDismissRequest) {
             Card(
@@ -54,7 +59,8 @@ fun ColorPickerDialog(
                     ColorGrid(
                         colors = DrawingColors.standardColors,
                         selectedColor = selectedColor,
-                        onColorSelected = onColorSelected
+                        onColorSelected = onColorSelected,
+                        onCustomColorClick = { showCustomColorPicker = true }
                     )
                     
                     // Premium colors section
@@ -68,7 +74,8 @@ fun ColorPickerDialog(
                         ColorGrid(
                             colors = DrawingColors.premiumColors,
                             selectedColor = selectedColor,
-                            onColorSelected = onColorSelected
+                            onColorSelected = onColorSelected,
+                            showCustomButton = false
                         )
                     }
                     
@@ -81,6 +88,18 @@ fun ColorPickerDialog(
                 }
             }
         }
+        
+        // Custom color picker dialog
+        if (showCustomColorPicker) {
+            CustomColorPickerDialog(
+                initialColor = selectedColor,
+                onColorSelected = { color ->
+                    onColorSelected(color)
+                    onDismissRequest()
+                },
+                onDismiss = { showCustomColorPicker = false }
+            )
+        }
     }
 }
 
@@ -89,6 +108,8 @@ private fun ColorGrid(
     colors: List<Color>,
     selectedColor: Color,
     onColorSelected: (Color) -> Unit,
+    onCustomColorClick: () -> Unit = {},
+    showCustomButton: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     LazyVerticalGrid(
@@ -105,6 +126,48 @@ private fun ColorGrid(
                 onClick = { onColorSelected(color) }
             )
         }
+        
+        // Custom color button with rainbow gradient
+        if (showCustomButton) {
+            item {
+                CustomColorButton(onClick = onCustomColorClick)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CustomColorButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(
+                Brush.sweepGradient(
+                    colors = listOf(
+                        Color.Red,
+                        Color.Yellow,
+                        Color.Green,
+                        Color.Cyan,
+                        Color.Blue,
+                        Color.Magenta,
+                        Color.Red
+                    )
+                )
+            )
+            .border(1.dp, Color.Gray.copy(alpha = 0.5f), CircleShape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.Add,
+            contentDescription = "Custom Color",
+            tint = Color.White,
+            modifier = Modifier.size(20.dp)
+        )
     }
 }
 
