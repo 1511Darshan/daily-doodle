@@ -74,6 +74,7 @@ fun SignUpScreen(
     onSignUpClick: (String, String, String) -> Unit,
     onLoginClick: () -> Unit,
     onGoogleSignIn: () -> Unit = {},
+    onSkipClick: () -> Unit = {},
     onTermsClick: () -> Unit = {},
     onPrivacyClick: () -> Unit = {},
     isLoading: Boolean = false,
@@ -518,7 +519,7 @@ fun SignUpScreen(
             Spacer(modifier = Modifier.height(16.dp))
             
             // Skip for now (Guest mode)
-            TextButton(onClick = { /* Navigate to feed as guest */ }) {
+            TextButton(onClick = onSkipClick) {
                 Text(
                     text = "Skip for now",
                     fontSize = 14.sp,

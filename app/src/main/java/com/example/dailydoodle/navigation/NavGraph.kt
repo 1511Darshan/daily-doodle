@@ -1,8 +1,14 @@
 package com.example.dailydoodle.navigation
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.unit.IntOffset
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -20,6 +26,10 @@ import com.example.dailydoodle.ui.screen.drawing.DrawingScreen
 import com.example.dailydoodle.ui.screen.feed.FeedScreen
 import com.example.dailydoodle.ui.screen.onboarding.OnboardingScreen
 import com.example.dailydoodle.ui.screen.profile.ProfileScreen
+import com.example.dailydoodle.ui.screen.settings.AboutScreen
+import com.example.dailydoodle.ui.screen.settings.AccessibilitySettingsScreen
+import com.example.dailydoodle.ui.screen.settings.SettingsScreen
+import com.example.dailydoodle.ui.screen.settings.ThemeSettingsScreen
 import com.example.dailydoodle.ui.screen.shop.ShopScreen
 import com.example.dailydoodle.ui.viewmodel.AuthUiState
 import com.example.dailydoodle.ui.viewmodel.AuthViewModel
@@ -43,16 +53,56 @@ sealed class Screen(val route: String) {
     object CreateChain : Screen("create_chain")
     object Profile : Screen("profile")
     object Shop : Screen("shop")
+    object Settings : Screen("settings")
+    object SettingsTheme : Screen("settings/theme")
+    object SettingsAccessibility : Screen("settings/accessibility")
+    object SettingsAbout : Screen("settings/about")
 }
+
+// Spring animation spec for smooth transitions
+private val springSpec = spring<IntOffset>(
+    dampingRatio = Spring.DampingRatioNoBouncy,
+    stiffness = Spring.StiffnessMediumLow
+)
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    startDestination: String = Screen.Onboarding.route
+    startDestination: String = Screen.Onboarding.route,
+    onGoogleSignIn: () -> Unit = {},
+    onSkipAuth: () -> Unit = {}
 ) {
     NavHost(
         navController = navController,
-        startDestination = startDestination
+        startDestination = startDestination,
+        // Slide in from right
+        enterTransition = {
+            slideInHorizontally(
+                initialOffsetX = { it },
+                animationSpec = springSpec
+            )
+        },
+        // Slide out to left
+        exitTransition = {
+            slideOutHorizontally(
+                targetOffsetX = { -it },
+                animationSpec = springSpec
+            )
+        },
+        // When going back: slide in from left
+        popEnterTransition = {
+            slideInHorizontally(
+                initialOffsetX = { -it },
+                animationSpec = springSpec
+            )
+        },
+        // When going back: slide out to right
+        popExitTransition = {
+            slideOutHorizontally(
+                targetOffsetX = { it },
+                animationSpec = springSpec
+            )
+        }
     ) {
         composable(Screen.Onboarding.route) {
             OnboardingScreen(
@@ -85,19 +135,21 @@ fun NavGraph(
             val errorMessage by authViewModel.errorMessage.collectAsState()
             val uiState by authViewModel.uiState.collectAsState()
             
-            // Handle auth state changes
-            when (uiState) {
-                is AuthUiState.Authenticated -> {
-                    navController.navigate(Screen.Feed.route) {
-                        popUpTo(Screen.SignUp.route) { inclusive = true }
+            // Handle auth state changes with LaunchedEffect to prevent repeated navigation
+            LaunchedEffect(uiState) {
+                when (uiState) {
+                    is AuthUiState.Authenticated -> {
+                        navController.navigate(Screen.Feed.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
-                }
-                is AuthUiState.NeedsEmailVerification -> {
-                    navController.navigate(Screen.EmailVerification.route) {
-                        popUpTo(Screen.SignUp.route) { inclusive = true }
+                    is AuthUiState.NeedsEmailVerification -> {
+                        navController.navigate(Screen.EmailVerification.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
+                    else -> {}
                 }
-                else -> {}
             }
             
             SignUpScreen(
@@ -109,9 +161,8 @@ fun NavGraph(
                         popUpTo(Screen.SignUp.route) { inclusive = true }
                     }
                 },
-                onGoogleSignIn = {
-                    // Google sign-in handled via activity result
-                },
+                onGoogleSignIn = onGoogleSignIn,
+                onSkipClick = onSkipAuth,
                 onTermsClick = {
                     navController.navigate(Screen.TermsOfService.route)
                 },
@@ -129,19 +180,21 @@ fun NavGraph(
             val errorMessage by authViewModel.errorMessage.collectAsState()
             val uiState by authViewModel.uiState.collectAsState()
             
-            // Handle auth state changes
-            when (uiState) {
-                is AuthUiState.Authenticated -> {
-                    navController.navigate(Screen.Feed.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
+            // Handle auth state changes with LaunchedEffect to prevent repeated navigation
+            LaunchedEffect(uiState) {
+                when (uiState) {
+                    is AuthUiState.Authenticated -> {
+                        navController.navigate(Screen.Feed.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
-                }
-                is AuthUiState.NeedsEmailVerification -> {
-                    navController.navigate(Screen.EmailVerification.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
+                    is AuthUiState.NeedsEmailVerification -> {
+                        navController.navigate(Screen.EmailVerification.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
+                    else -> {}
                 }
-                else -> {}
             }
             
             LoginScreen(
@@ -153,9 +206,7 @@ fun NavGraph(
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
-                onGoogleSignIn = {
-                    // Google sign-in handled via activity result
-                },
+                onGoogleSignIn = onGoogleSignIn,
                 onForgotPasswordClick = {
                     navController.navigate(Screen.ForgotPassword.route)
                 },
@@ -239,7 +290,7 @@ fun NavGraph(
                     navController.navigate(Screen.CreateChain.route)
                 },
                 onProfileClick = {
-                    navController.navigate(Screen.Profile.route)
+                    navController.navigate(Screen.Settings.route)
                 }
             )
         }
@@ -288,6 +339,9 @@ fun NavGraph(
                 onBackClick = {
                     navController.popBackStack()
                 },
+                onSettingsClick = {
+                    navController.navigate(Screen.Settings.route)
+                },
                 onShopClick = {
                     navController.navigate(Screen.Shop.route)
                 }
@@ -296,6 +350,51 @@ fun NavGraph(
         
         composable(Screen.Shop.route) {
             ShopScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        // Settings screens
+        composable(Screen.Settings.route) {
+            SettingsScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onThemeClick = {
+                    navController.navigate(Screen.SettingsTheme.route)
+                },
+                onAccessibilityClick = {
+                    navController.navigate(Screen.SettingsAccessibility.route)
+                },
+                onProfileClick = {
+                    navController.navigate(Screen.Profile.route)
+                },
+                onAboutClick = {
+                    navController.navigate(Screen.SettingsAbout.route)
+                }
+            )
+        }
+        
+        composable(Screen.SettingsTheme.route) {
+            ThemeSettingsScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable(Screen.SettingsAccessibility.route) {
+            AccessibilitySettingsScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable(Screen.SettingsAbout.route) {
+            AboutScreen(
                 onBackClick = {
                     navController.popBackStack()
                 }

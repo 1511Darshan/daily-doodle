@@ -46,19 +46,25 @@ class ChainRepository @Inject constructor(
                 
                 ChainFilter.POPULAR -> firestore.collection("chains")
                     .orderBy("panelCount", Query.Direction.DESCENDING)
-                    .orderBy("lastPanelAt", Query.Direction.DESCENDING)
                     .limit(limit.toLong())
                 
                 ChainFilter.FEATURED -> firestore.collection("chains")
-                    .whereEqualTo("status", ChainStatus.OPEN)
+                    .whereEqualTo("status", ChainStatus.OPEN.name)
                     .orderBy("featuredScore", Query.Direction.DESCENDING)
                     .limit(limit.toLong())
             }
             
             val snapshot = query.get().await()
-            val chains = snapshot.documents.mapNotNull { Chain.fromDocument(it) }
+            val chains = snapshot.documents.mapNotNull { doc ->
+                Chain.fromDocument(doc)
+            }
+            android.util.Log.d("ChainRepository", "Fetched ${chains.size} chains for filter $filter")
+            chains.forEach { chain ->
+                android.util.Log.d("ChainRepository", "Chain: ${chain.id}, creator: ${chain.creatorId}, name: ${chain.creatorName}")
+            }
             emit(chains)
         } catch (e: Exception) {
+            android.util.Log.e("ChainRepository", "Error fetching chains: ${e.message}", e)
             emit(emptyList())
         }
     }
