@@ -23,3 +23,14 @@ local.properties
 captures/
 output.json
 google-services.json
+# Server data (uploads, database)
+server/data/
+server/node_modules/
+
+# Unnecessary files
+DrawingCanvasFiles/
+*.png
+FIREBASE_SETUP.md
+FIREBASE_STORAGE_SETUP.md
+PROJECT_SUMMARY.md
+SETUP.md

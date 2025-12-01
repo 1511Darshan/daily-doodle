@@ -13,6 +13,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dailydoodle.data.repository.PanelRepository
 import com.example.dailydoodle.data.repository.StorageRepository
+import com.example.dailydoodle.data.repository.UploadRepository
 import com.example.dailydoodle.di.AppModule
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +27,8 @@ import kotlinx.coroutines.launch
  */
 class DrawingCanvasViewModel(
     private val storageRepository: StorageRepository = AppModule.storageRepository,
-    private val panelRepository: PanelRepository = AppModule.panelRepository
+    private val panelRepository: PanelRepository = AppModule.panelRepository,
+    private val uploadRepository: UploadRepository = UploadRepository()
 ) : ViewModel() {
 
     companion object {
@@ -339,6 +341,7 @@ class DrawingCanvasViewModel(
 
     /**
      * Submit the panel to the chain.
+     * Uploads to both local storage and the backend server.
      */
     fun submitPanel(
         chainId: String,
@@ -350,7 +353,7 @@ class DrawingCanvasViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isUploading = true) }
             
-            // Upload image
+            // Upload to local storage first
             val uploadResult = storageRepository.uploadPanelImage(bitmap, authorId, chainId)
             
             if (uploadResult.isFailure) {
@@ -368,6 +371,20 @@ class DrawingCanvasViewModel(
                     it.copy(isUploading = false, errorMessage = "Upload failed")
                 }
                 return@launch
+            }
+
+            // Also upload to backend server (for testing/sharing)
+            try {
+                val serverResult = uploadRepository.uploadPanel(bitmap, chainId, authorId)
+                if (serverResult.isSuccess) {
+                    val response = serverResult.getOrNull()
+                    Log.d(TAG, "Server upload successful: ${response?.imageUrl}")
+                } else {
+                    Log.w(TAG, "Server upload failed (non-critical): ${serverResult.exceptionOrNull()?.message}")
+                }
+            } catch (e: Exception) {
+                // Server upload is non-critical, log and continue
+                Log.w(TAG, "Server upload error (non-critical): ${e.message}")
             }
 
             // Add panel to Firestore

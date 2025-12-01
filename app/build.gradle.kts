@@ -24,12 +24,19 @@ android {
     }
 
     buildTypes {
+        debug {
+            // For Android emulator: 10.0.2.2 points to host machine's localhost
+            // For physical device: use ngrok URL instead
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:3000\"")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Set your production API URL here
+            buildConfigField("String", "BASE_URL", "\"https://api.yourdomain.com\"")
         }
     }
     compileOptions {
@@ -41,6 +48,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -99,6 +107,14 @@ dependencies {
     
     // Motion prediction for better stylus support
     implementation(libs.motion.prediction)
+    
+    // Networking (Retrofit + OkHttp + Moshi)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.moshi)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+    implementation(libs.moshi)
+    implementation(libs.moshi.kotlin)
     
     // Image Loading
     implementation(libs.coil.compose)

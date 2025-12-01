@@ -20,6 +20,9 @@ googleServices = "4.4.4"
 accompanistPager = "0.34.0"
 ink = "1.0.0-beta01"
 motionPrediction = "1.0.0-beta06"
+retrofit = "2.9.0"
+okhttp = "4.12.0"
+moshi = "1.15.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -83,6 +86,14 @@ ink-geometry-compose = { group = "androidx.ink", name = "ink-geometry-compose", 
 
 # Motion Prediction
 motion-prediction = { group = "androidx.input", name = "input-motionprediction", version.ref = "motionPrediction" }
+
+# Networking (Retrofit + OkHttp + Moshi)
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-converter-moshi = { group = "com.squareup.retrofit2", name = "converter-moshi", version.ref = "retrofit" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+moshi = { group = "com.squareup.moshi", name = "moshi", version.ref = "moshi" }
+moshi-kotlin = { group = "com.squareup.moshi", name = "moshi-kotlin", version.ref = "moshi" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
