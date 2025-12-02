@@ -25,9 +25,9 @@ android {
 
     buildTypes {
         debug {
-            // For Android emulator: 10.0.2.2 points to host machine's localhost
-            // For physical device: use ngrok URL instead
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:3000\"")
+            // For physical device via ngrok:
+            buildConfigField("String", "BASE_URL", "\"https://convolutionary-turgently-rey.ngrok-free.dev\"")
+            // For Android emulator: use "http://10.0.2.2:3000"
         }
         release {
             isMinifyEnabled = false
@@ -119,8 +119,12 @@ dependencies {
     // Image Loading
     implementation(libs.coil.compose)
     
+    // DataStore Preferences
+    implementation(libs.datastore.preferences)
+    
     // Pager (Accompanist)
     implementation(libs.accompanist.pager)
+    implementation(libs.accompanist.drawablepainter)
     
     // Testing
     testImplementation(libs.junit)

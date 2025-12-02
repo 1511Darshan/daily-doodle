@@ -38,7 +38,8 @@ fun VerticalDrawingToolbox(
     onUndo: () -> Unit,
     onRedo: () -> Unit,
     onClear: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onPanelSizeClick: (() -> Unit)? = null
 ) {
     var brushMenuExpanded by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
@@ -176,6 +177,25 @@ fun VerticalDrawingToolbox(
                     painter = painterResource(R.drawable.ic_clear_all),
                     contentDescription = "Clear All"
                 )
+            }
+            
+            // Panel size button
+            if (onPanelSizeClick != null) {
+                HorizontalDivider(
+                    modifier = Modifier
+                        .width(40.dp)
+                        .padding(vertical = 4.dp)
+                )
+                
+                IconButton(
+                    onClick = onPanelSizeClick,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_aspect_ratio),
+                        contentDescription = "Panel Size"
+                    )
+                }
             }
         }
     }

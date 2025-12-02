@@ -1,14 +1,26 @@
 package com.example.dailydoodle.ui.screen.onboarding
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -20,12 +32,15 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dailydoodle.util.Analytics
+import kotlinx.coroutines.delay
 
 // Color definitions matching the design
 object OnboardingColors {
@@ -50,6 +65,62 @@ fun OnboardingScreen(
     onComplete: () -> Unit = {},
     onSkip: () -> Unit = {}
 ) {
+    // Entrance animations
+    var illustrationVisible by remember { mutableStateOf(false) }
+    var textVisible by remember { mutableStateOf(false) }
+    var buttonsVisible by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(Unit) {
+        delay(100)
+        illustrationVisible = true
+        delay(200)
+        textVisible = true
+        delay(150)
+        buttonsVisible = true
+    }
+    
+    val illustrationScale by animateFloatAsState(
+        targetValue = if (illustrationVisible) 1f else 0.8f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "illustration_scale"
+    )
+    val illustrationAlpha by animateFloatAsState(
+        targetValue = if (illustrationVisible) 1f else 0f,
+        animationSpec = tween(400),
+        label = "illustration_alpha"
+    )
+    
+    val textOffset by animateFloatAsState(
+        targetValue = if (textVisible) 0f else 30f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "text_offset"
+    )
+    val textAlpha by animateFloatAsState(
+        targetValue = if (textVisible) 1f else 0f,
+        animationSpec = tween(300),
+        label = "text_alpha"
+    )
+    
+    val buttonsOffset by animateFloatAsState(
+        targetValue = if (buttonsVisible) 0f else 40f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "buttons_offset"
+    )
+    val buttonsAlpha by animateFloatAsState(
+        targetValue = if (buttonsVisible) 1f else 0f,
+        animationSpec = tween(300),
+        label = "buttons_alpha"
+    )
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -59,7 +130,7 @@ fun OnboardingScreen(
         // Curved Lines Background
         CurvedLinesBackground()
 
-        // Floating Elements
+        // Floating Elements with subtle animation
         FloatingElements()
 
         // Main Content
@@ -73,9 +144,15 @@ fun OnboardingScreen(
         ) {
             Spacer(modifier = Modifier.weight(0.2f))
 
-            // Central Illustration - Doodle Chain themed
+            // Central Illustration - Doodle Chain themed with animation
             DoodleChainIllustration(
-                modifier = Modifier.size(260.dp)
+                modifier = Modifier
+                    .size(260.dp)
+                    .graphicsLayer {
+                        scaleX = illustrationScale
+                        scaleY = illustrationScale
+                        alpha = illustrationAlpha
+                    }
             )
 
             Spacer(modifier = Modifier.weight(0.2f))
@@ -85,8 +162,12 @@ fun OnboardingScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                // Text Content
+                // Text Content with animation
                 Column(
+                    modifier = Modifier.graphicsLayer {
+                        translationY = textOffset
+                        alpha = textAlpha
+                    },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -126,36 +207,38 @@ fun OnboardingScreen(
                     )
                 }
 
-                // Buttons
+                // Buttons with animation
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            translationY = buttonsOffset
+                            alpha = buttonsAlpha
+                        },
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Login button (outlined)
-                    Button(
+                    // Login button (outlined) with press animation
+                    AnimatedButton(
                         onClick = {
                             Analytics.logOnboardingSkipped()
                             onSkip()
                         },
                         modifier = Modifier
                             .weight(1f)
-                            .height(52.dp)
-                            .border(2.dp, OnboardingColors.Black, RoundedCornerShape(50)),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = OnboardingColors.White
-                        ),
-                        shape = RoundedCornerShape(50)
+                            .height(52.dp),
+                        containerColor = OnboardingColors.White,
+                        contentColor = OnboardingColors.Black,
+                        borderColor = OnboardingColors.Black
                     ) {
                         Text(
                             text = "Login",
-                            color = OnboardingColors.Black,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
 
-                    // Sign Up button (filled)
-                    Button(
+                    // Sign Up button (filled) with press animation
+                    AnimatedButton(
                         onClick = {
                             Analytics.logOnboardingCompleted()
                             onComplete()
@@ -163,14 +246,11 @@ fun OnboardingScreen(
                         modifier = Modifier
                             .weight(1f)
                             .height(52.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = OnboardingColors.Black
-                        ),
-                        shape = RoundedCornerShape(50)
+                        containerColor = OnboardingColors.Black,
+                        contentColor = OnboardingColors.White
                     ) {
                         Text(
                             text = "Sign Up",
-                            color = OnboardingColors.White,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -179,6 +259,58 @@ fun OnboardingScreen(
             }
         }
     }
+}
+
+/**
+ * Button with press scale animation
+ */
+@Composable
+private fun AnimatedButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    containerColor: Color,
+    contentColor: Color,
+    borderColor: Color? = null,
+    content: @Composable RowScope.() -> Unit
+) {
+    var isPressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.95f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessHigh
+        ),
+        label = "button_scale"
+    )
+    
+    Button(
+        onClick = onClick,
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .then(
+                if (borderColor != null) {
+                    Modifier.border(2.dp, borderColor, RoundedCornerShape(50))
+                } else Modifier
+            )
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        isPressed = true
+                        tryAwaitRelease()
+                        isPressed = false
+                    }
+                )
+            },
+        colors = ButtonDefaults.buttonColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        shape = RoundedCornerShape(50),
+        content = content
+    )
 }
 
 @Composable
@@ -262,11 +394,42 @@ fun CurvedLinesBackground() {
 
 @Composable
 fun FloatingElements() {
+    // Floating animation
+    val infiniteTransition = rememberInfiniteTransition(label = "float")
+    val floatOffset1 by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 8f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "float1"
+    )
+    val floatOffset2 by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = -6f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "float2"
+    )
+    val floatOffset3 by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 10f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "float3"
+    )
+    
     Box(modifier = Modifier.fillMaxSize()) {
         // Green rounded square with pencil icon - top left
         Box(
             modifier = Modifier
                 .padding(start = 48.dp, top = 112.dp)
+                .offset(y = floatOffset1.dp)
                 .size(56.dp)
                 .rotate(6f)
                 .background(OnboardingColors.Green, RoundedCornerShape(16.dp)),
@@ -283,6 +446,7 @@ fun FloatingElements() {
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(end = 32.dp, top = 96.dp)
+                .offset(y = floatOffset2.dp)
         ) {
             PaperPlane()
         }
@@ -291,6 +455,7 @@ fun FloatingElements() {
         Box(
             modifier = Modifier
                 .padding(start = 40.dp, top = 440.dp)
+                .offset(y = floatOffset3.dp)
                 .size(48.dp)
                 .rotate(-12f)
                 .background(OnboardingColors.Pink, RoundedCornerShape(12.dp)),
@@ -307,6 +472,7 @@ fun FloatingElements() {
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(end = 48.dp, top = 380.dp)
+                .offset(y = floatOffset1.dp)
                 .size(48.dp)
                 .rotate(12f)
                 .background(OnboardingColors.LightBlue, RoundedCornerShape(12.dp)),

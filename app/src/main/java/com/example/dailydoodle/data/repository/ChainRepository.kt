@@ -1,9 +1,11 @@
 package com.example.dailydoodle.data.repository
 
+import android.util.Log
 import com.example.dailydoodle.data.model.Chain
 import com.example.dailydoodle.data.model.ChainStatus
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
@@ -14,6 +16,12 @@ import javax.inject.Singleton
 class ChainRepository @Inject constructor(
     private val firestore: FirebaseFirestore
 ) {
+    private val storage = FirebaseStorage.getInstance()
+
+    companion object {
+        private const val TAG = "ChainRepository"
+    }
+
     suspend fun createChain(
         seedPrompt: String,
         creatorId: String,
@@ -128,11 +136,47 @@ class ChainRepository @Inject constructor(
 
     suspend fun deleteChain(chainId: String, userId: String): Result<Unit> {
         return try {
-            // Delete the chain directly
-            // TODO: Add proper authorization check once creatorId is consistently set
+            Log.d(TAG, "Deleting chain: $chainId and all its panels/images")
+            
+            // 1. Get all panels to collect image URLs
+            val panelsSnapshot = firestore.collection("chains")
+                .document(chainId)
+                .collection("panels")
+                .get()
+                .await()
+            
+            val imageUrls = panelsSnapshot.documents.mapNotNull { doc ->
+                doc.getString("imageUrl")
+            }
+            Log.d(TAG, "Found ${imageUrls.size} images to delete")
+            
+            // 2. Delete all images from Firebase Storage
+            for (imageUrl in imageUrls) {
+                if (imageUrl.isNotEmpty() && imageUrl.startsWith("https://")) {
+                    try {
+                        val imageRef = storage.getReferenceFromUrl(imageUrl)
+                        imageRef.delete().await()
+                        Log.d(TAG, "Deleted image: $imageUrl")
+                    } catch (e: Exception) {
+                        // Log but continue - don't fail entire operation for one image
+                        Log.w(TAG, "Failed to delete image $imageUrl: ${e.message}")
+                    }
+                }
+            }
+            
+            // 3. Delete all panel documents
+            for (doc in panelsSnapshot.documents) {
+                doc.reference.delete().await()
+            }
+            Log.d(TAG, "Deleted ${panelsSnapshot.documents.size} panel documents")
+            
+            // 4. Delete the chain document
             firestore.collection("chains").document(chainId).delete().await()
+            Log.d(TAG, "Chain deleted successfully")
+            
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e(TAG, "Failed to delete chain: ${e.message}", e)
             Result.failure(e)
         }
     }

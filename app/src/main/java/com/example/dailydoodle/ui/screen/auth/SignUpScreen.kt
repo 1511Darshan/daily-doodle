@@ -1,11 +1,13 @@
 package com.example.dailydoodle.ui.screen.auth
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -18,8 +20,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -30,8 +34,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.dailydoodle.ui.screen.onboarding.OnboardingColors
 import com.example.dailydoodle.util.Analytics
+
+/**
+ * Kenko-style design constants
+ */
+private val KenkoBorderWidth = 1.4.dp
+
+private object KenkoColors {
+    val Background = Color(0xFFF5F5F0)
+    val CardBackground = Color(0xFFFFFFFF)
+    val BorderColor = Color(0xFFE0E0E0)
+    val PrimaryText = Color(0xFF1A1A1A)
+    val SecondaryText = Color(0xFF757575)
+    val GoogleBlue = Color(0xFF4285F4)
+    val ErrorRed = Color(0xFFE53935)
+    val SuccessGreen = Color(0xFF43A047)
+}
 
 // Validation helpers
 object ValidationUtils {
@@ -98,17 +117,9 @@ fun SignUpScreen(
     val focusManager = LocalFocusManager.current
     val passwordStrength = ValidationUtils.getPasswordStrength(password)
     
-    // Check if form is valid
-    val isFormValid = displayName.isNotBlank() &&
-            ValidationUtils.isValidEmail(email) &&
-            ValidationUtils.isValidPassword(password) &&
-            password == confirmPassword &&
-            acceptedTerms
-    
     fun validateAndSubmit() {
         var isValid = true
         
-        // Validate display name
         if (displayName.isBlank()) {
             displayNameError = "Display name is required"
             isValid = false
@@ -119,7 +130,6 @@ fun SignUpScreen(
             displayNameError = null
         }
         
-        // Validate email
         if (email.isBlank()) {
             emailError = "Email is required"
             isValid = false
@@ -130,7 +140,6 @@ fun SignUpScreen(
             emailError = null
         }
         
-        // Validate password
         if (password.isBlank()) {
             passwordError = "Password is required"
             isValid = false
@@ -141,7 +150,6 @@ fun SignUpScreen(
             passwordError = null
         }
         
-        // Validate confirm password
         if (confirmPassword != password) {
             confirmPasswordError = "Passwords do not match"
             isValid = false
@@ -149,7 +157,6 @@ fun SignUpScreen(
             confirmPasswordError = null
         }
         
-        // Validate terms
         if (!acceptedTerms) {
             termsError = "You must accept the Terms and Privacy Policy"
             isValid = false
@@ -166,364 +173,571 @@ fun SignUpScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(OnboardingColors.Background)
+            .background(KenkoColors.Background)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp)
-                .padding(top = 48.dp, bottom = 24.dp),
+                .padding(horizontal = 20.dp)
+                .padding(top = 60.dp, bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header
+            // Header - Large Kenko-style title
             Text(
                 text = "Create Account",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = OnboardingColors.DarkText
+                style = MaterialTheme.typography.displaySmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 32.sp
+                ),
+                color = KenkoColors.PrimaryText
             )
             
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
                 text = "Join Daily Doodle Chain and start creating!",
-                fontSize = 14.sp,
-                color = OnboardingColors.GrayText,
+                style = MaterialTheme.typography.bodyLarge,
+                color = KenkoColors.SecondaryText,
                 textAlign = TextAlign.Center
             )
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Google Sign In Button
-            OutlinedButton(
+            // Google Sign In - Kenko style card
+            KenkoAuthButton(
                 onClick = onGoogleSignIn,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = OnboardingColors.White
-                )
-            ) {
-                Text(
-                    text = "🔵 Continue with Google",
-                    fontSize = 16.sp,
-                    color = OnboardingColors.DarkText
-                )
-            }
+                icon = {
+                    Text(
+                        text = "G",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        color = KenkoColors.GoogleBlue
+                    )
+                },
+                text = "Continue with Google",
+                enabled = !isLoading
+            )
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Divider
+            // Divider with "or"
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Divider(modifier = Modifier.weight(1f), color = OnboardingColors.GrayText.copy(alpha = 0.3f))
-                Text(
-                    text = "  or  ",
-                    color = OnboardingColors.GrayText,
-                    fontSize = 14.sp
+                HorizontalDivider(
+                    modifier = Modifier.weight(1f),
+                    thickness = KenkoBorderWidth,
+                    color = KenkoColors.BorderColor
                 )
-                Divider(modifier = Modifier.weight(1f), color = OnboardingColors.GrayText.copy(alpha = 0.3f))
+                Text(
+                    text = "or",
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = KenkoColors.SecondaryText
+                )
+                HorizontalDivider(
+                    modifier = Modifier.weight(1f),
+                    thickness = KenkoBorderWidth,
+                    color = KenkoColors.BorderColor
+                )
             }
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Display Name Field
-            OutlinedTextField(
+            // Form Fields - Kenko style
+            KenkoTextField(
                 value = displayName,
-                onValueChange = { 
-                    displayName = it
-                    displayNameError = null
-                },
-                label = { Text("Display Name") },
-                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
-                isError = displayNameError != null,
-                supportingText = displayNameError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                keyboardOptions = KeyboardOptions(
-                    imeAction = ImeAction.Next
-                ),
+                onValueChange = { displayName = it; displayNameError = null },
+                placeholder = "Display Name",
+                icon = Icons.Default.Person,
+                error = displayNameError,
+                enabled = !isLoading,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(
                     onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                ),
-                singleLine = true,
-                enabled = !isLoading
+                )
             )
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Email Field
-            OutlinedTextField(
+            KenkoTextField(
                 value = email,
-                onValueChange = { 
-                    email = it
-                    emailError = null
-                },
-                label = { Text("Email") },
-                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
-                isError = emailError != null,
-                supportingText = emailError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                onValueChange = { email = it; emailError = null },
+                placeholder = "Email",
+                icon = Icons.Default.Email,
+                error = emailError,
+                enabled = !isLoading,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
                 ),
                 keyboardActions = KeyboardActions(
                     onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                ),
-                singleLine = true,
-                enabled = !isLoading
+                )
             )
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Password Field
-            OutlinedTextField(
+            KenkoPasswordField(
                 value = password,
-                onValueChange = { 
-                    password = it
-                    passwordError = null
-                },
-                label = { Text("Password") },
-                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-                trailingIcon = {
-                    TextButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Text(
-                            text = if (passwordVisible) "Hide" else "Show",
-                            fontSize = 12.sp,
-                            color = OnboardingColors.Blue
-                        )
-                    }
-                },
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                isError = passwordError != null,
-                supportingText = passwordError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                onValueChange = { password = it; passwordError = null },
+                placeholder = "Password",
+                passwordVisible = passwordVisible,
+                onToggleVisibility = { passwordVisible = !passwordVisible },
+                error = passwordError,
+                enabled = !isLoading,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Next
                 ),
                 keyboardActions = KeyboardActions(
                     onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                ),
-                singleLine = true,
-                enabled = !isLoading
+                )
             )
             
             // Password Strength Indicator
             if (password.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    repeat(3) { index ->
-                        val isActive = when (passwordStrength) {
-                            PasswordStrength.WEAK -> index == 0
-                            PasswordStrength.MEDIUM -> index <= 1
-                            PasswordStrength.STRONG -> true
-                            PasswordStrength.NONE -> false
-                        }
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(4.dp)
-                                .background(
-                                    if (isActive) passwordStrength.color else Color.LightGray,
-                                    RoundedCornerShape(2.dp)
-                                )
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = passwordStrength.label,
-                        color = passwordStrength.color,
-                        fontSize = 12.sp
-                    )
-                }
+                Spacer(modifier = Modifier.height(8.dp))
+                PasswordStrengthIndicator(strength = passwordStrength)
             }
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Confirm Password Field
-            OutlinedTextField(
+            KenkoPasswordField(
                 value = confirmPassword,
-                onValueChange = { 
-                    confirmPassword = it
-                    confirmPasswordError = null
-                },
-                label = { Text("Confirm Password") },
-                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-                trailingIcon = {
-                    if (confirmPassword.isNotEmpty() && confirmPassword == password) {
-                        Icon(Icons.Default.Check, contentDescription = "Passwords match", tint = Color(0xFF43A047))
-                    } else {
-                        TextButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                            Text(
-                                text = if (confirmPasswordVisible) "Hide" else "Show",
-                                fontSize = 12.sp,
-                                color = OnboardingColors.Blue
-                            )
-                        }
-                    }
-                },
-                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                isError = confirmPasswordError != null,
-                supportingText = confirmPasswordError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                onValueChange = { confirmPassword = it; confirmPasswordError = null },
+                placeholder = "Confirm Password",
+                passwordVisible = confirmPasswordVisible,
+                onToggleVisibility = { confirmPasswordVisible = !confirmPasswordVisible },
+                error = confirmPasswordError,
+                enabled = !isLoading,
+                showMatchIcon = confirmPassword.isNotEmpty() && confirmPassword == password,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
                 ),
                 keyboardActions = KeyboardActions(
-                    onDone = { 
-                        focusManager.clearFocus()
-                        if (isFormValid) validateAndSubmit()
-                    }
-                ),
-                singleLine = true,
-                enabled = !isLoading
+                    onDone = { focusManager.clearFocus() }
+                )
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             
-            // Terms and Privacy Checkbox
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Checkbox(
-                    checked = acceptedTerms,
-                    onCheckedChange = { 
-                        acceptedTerms = it
-                        termsError = null
-                    },
-                    enabled = !isLoading
-                )
-                Column {
-                    Row {
-                        Text(
-                            text = "I agree to the ",
-                            fontSize = 13.sp,
-                            color = OnboardingColors.GrayText
-                        )
-                        Text(
-                            text = "Terms of Service",
-                            fontSize = 13.sp,
-                            color = OnboardingColors.Blue,
-                            textDecoration = TextDecoration.Underline,
-                            modifier = Modifier.clickable { onTermsClick() }
-                        )
-                        Text(
-                            text = " and ",
-                            fontSize = 13.sp,
-                            color = OnboardingColors.GrayText
-                        )
-                    }
-                    Text(
-                        text = "Privacy Policy",
-                        fontSize = 13.sp,
-                        color = OnboardingColors.Blue,
-                        textDecoration = TextDecoration.Underline,
-                        modifier = Modifier.clickable { onPrivacyClick() }
-                    )
-                }
-            }
+            // Terms Checkbox - Kenko style
+            KenkoCheckboxRow(
+                checked = acceptedTerms,
+                onCheckedChange = { acceptedTerms = it; termsError = null },
+                enabled = !isLoading,
+                onTermsClick = onTermsClick,
+                onPrivacyClick = onPrivacyClick
+            )
             
             if (termsError != null) {
                 Text(
                     text = termsError!!,
-                    color = MaterialTheme.colorScheme.error,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(start = 16.dp)
+                    color = KenkoColors.ErrorRed,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp, top = 4.dp)
                 )
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             
-            // Error message from Firebase
+            // Error message
             if (errorMessage != null) {
-                Card(
+                Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
+                    shape = RoundedCornerShape(16.dp),
+                    color = KenkoColors.ErrorRed.copy(alpha = 0.1f),
+                    border = BorderStroke(KenkoBorderWidth, KenkoColors.ErrorRed.copy(alpha = 0.3f))
                 ) {
                     Text(
                         text = errorMessage,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.padding(12.dp),
-                        fontSize = 14.sp
+                        color = KenkoColors.ErrorRed,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(16.dp)
                     )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
             
-            // Sign Up Button
-            Button(
+            // Create Account Button - Kenko style (dark filled)
+            KenkoPrimaryButton(
                 onClick = { validateAndSubmit() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = OnboardingColors.Black,
-                    disabledContainerColor = OnboardingColors.Black.copy(alpha = 0.5f)
-                ),
+                text = "Create Account",
+                isLoading = isLoading,
                 enabled = !isLoading
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = OnboardingColors.White,
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text(
-                        text = "Create Account",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = OnboardingColors.White
-                    )
-                }
-            }
+            )
             
             Spacer(modifier = Modifier.height(24.dp))
             
             // Already have account
             Row(
-                horizontalArrangement = Arrangement.Center
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "Already have an account? ",
-                    fontSize = 14.sp,
-                    color = OnboardingColors.GrayText
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = KenkoColors.SecondaryText
                 )
                 Text(
                     text = "Log in",
-                    fontSize = 14.sp,
-                    color = OnboardingColors.Blue,
-                    fontWeight = FontWeight.Medium,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = KenkoColors.PrimaryText,
                     modifier = Modifier.clickable { onLoginClick() }
                 )
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             
-            // Skip for now (Guest mode)
-            TextButton(onClick = onSkipClick) {
+            // Bottom tagline
+            Text(
+                text = "draw together",
+                style = MaterialTheme.typography.labelMedium,
+                color = KenkoColors.SecondaryText.copy(alpha = 0.6f)
+            )
+        }
+    }
+}
+
+// ===== Kenko-style UI Components =====
+
+@Composable
+private fun KenkoAuthButton(
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit,
+    text: String,
+    enabled: Boolean = true
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = KenkoColors.CardBackground,
+        border = BorderStroke(KenkoBorderWidth, KenkoColors.BorderColor),
+        onClick = onClick,
+        enabled = enabled
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            icon()
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                color = KenkoColors.PrimaryText
+            )
+        }
+    }
+}
+
+@Composable
+private fun KenkoTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    icon: ImageVector,
+    error: String? = null,
+    enabled: Boolean = true,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = KenkoColors.CardBackground,
+            border = BorderStroke(
+                KenkoBorderWidth,
+                if (error != null) KenkoColors.ErrorRed else KenkoColors.BorderColor
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = KenkoColors.SecondaryText,
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Box(modifier = Modifier.weight(1f)) {
+                    if (value.isEmpty()) {
+                        Text(
+                            text = placeholder,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = KenkoColors.SecondaryText
+                        )
+                    }
+                    BasicTextField(
+                        value = value,
+                        onValueChange = onValueChange,
+                        enabled = enabled,
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(
+                            color = KenkoColors.PrimaryText
+                        ),
+                        singleLine = true,
+                        keyboardOptions = keyboardOptions,
+                        keyboardActions = keyboardActions,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+        if (error != null) {
+            Text(
+                text = error,
+                color = KenkoColors.ErrorRed,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun KenkoPasswordField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    passwordVisible: Boolean,
+    onToggleVisibility: () -> Unit,
+    error: String? = null,
+    enabled: Boolean = true,
+    showMatchIcon: Boolean = false,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = KenkoColors.CardBackground,
+            border = BorderStroke(
+                KenkoBorderWidth,
+                if (error != null) KenkoColors.ErrorRed else KenkoColors.BorderColor
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = null,
+                    tint = KenkoColors.SecondaryText,
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Box(modifier = Modifier.weight(1f)) {
+                    if (value.isEmpty()) {
+                        Text(
+                            text = placeholder,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = KenkoColors.SecondaryText
+                        )
+                    }
+                    BasicTextField(
+                        value = value,
+                        onValueChange = onValueChange,
+                        enabled = enabled,
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(
+                            color = KenkoColors.PrimaryText
+                        ),
+                        singleLine = true,
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = keyboardOptions,
+                        keyboardActions = keyboardActions,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                if (showMatchIcon) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Passwords match",
+                        tint = KenkoColors.SuccessGreen,
+                        modifier = Modifier.size(22.dp)
+                    )
+                } else {
+                    TextButton(
+                        onClick = onToggleVisibility,
+                        contentPadding = PaddingValues(horizontal = 8.dp)
+                    ) {
+                        Text(
+                            text = if (passwordVisible) "Hide" else "Show",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = KenkoColors.SecondaryText
+                        )
+                    }
+                }
+            }
+        }
+        if (error != null) {
+            Text(
+                text = error,
+                color = KenkoColors.ErrorRed,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun PasswordStrengthIndicator(strength: PasswordStrength) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(3) { index ->
+            val isActive = when (strength) {
+                PasswordStrength.WEAK -> index == 0
+                PasswordStrength.MEDIUM -> index <= 1
+                PasswordStrength.STRONG -> true
+                PasswordStrength.NONE -> false
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(
+                        if (isActive) strength.color else KenkoColors.BorderColor
+                    )
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = strength.label,
+            color = strength.color,
+            style = MaterialTheme.typography.labelSmall
+        )
+    }
+}
+
+@Composable
+private fun KenkoCheckboxRow(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean,
+    onTermsClick: () -> Unit,
+    onPrivacyClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Custom Kenko-style checkbox
+        Surface(
+            modifier = Modifier
+                .size(24.dp)
+                .clickable(enabled = enabled) { onCheckedChange(!checked) },
+            shape = RoundedCornerShape(6.dp),
+            color = if (checked) KenkoColors.PrimaryText else KenkoColors.CardBackground,
+            border = BorderStroke(
+                KenkoBorderWidth,
+                if (checked) KenkoColors.PrimaryText else KenkoColors.BorderColor
+            )
+        ) {
+            if (checked) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = KenkoColors.CardBackground,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(4.dp)
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.width(12.dp))
+        
+        Column {
+            Row {
                 Text(
-                    text = "Skip for now",
-                    fontSize = 14.sp,
-                    color = OnboardingColors.GrayText
+                    text = "I agree to the ",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = KenkoColors.SecondaryText
+                )
+                Text(
+                    text = "Terms of Service",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = KenkoColors.PrimaryText,
+                    textDecoration = TextDecoration.Underline,
+                    modifier = Modifier.clickable { onTermsClick() }
+                )
+                Text(
+                    text = " and",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = KenkoColors.SecondaryText
+                )
+            }
+            Text(
+                text = "Privacy Policy",
+                style = MaterialTheme.typography.bodyMedium,
+                color = KenkoColors.PrimaryText,
+                textDecoration = TextDecoration.Underline,
+                modifier = Modifier.clickable { onPrivacyClick() }
+            )
+        }
+    }
+}
+
+@Composable
+private fun KenkoPrimaryButton(
+    onClick: () -> Unit,
+    text: String,
+    isLoading: Boolean = false,
+    enabled: Boolean = true
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = KenkoColors.PrimaryText,
+        onClick = onClick,
+        enabled = enabled && !isLoading
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = KenkoColors.CardBackground,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = KenkoColors.CardBackground
                 )
             }
         }

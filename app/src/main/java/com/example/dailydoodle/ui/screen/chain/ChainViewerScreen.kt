@@ -168,6 +168,12 @@ fun PanelView(
     panel: Panel,
     modifier: Modifier = Modifier
 ) {
+    // Log the image URL for debugging
+    android.util.Log.d("PanelView", "Loading panel ${panel.id}, imageUrl: ${panel.imageUrl}")
+    
+    var isLoading by remember { mutableStateOf(true) }
+    var loadError by remember { mutableStateOf<String?>(null) }
+    
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center
@@ -179,14 +185,78 @@ fun PanelView(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            AsyncImage(
-                model = panel.imageUrl,
-                contentDescription = panel.caption,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                contentScale = ContentScale.Fit
-            )
+            if (panel.imageUrl.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = coil.request.ImageRequest.Builder(LocalContext.current)
+                            .data(panel.imageUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = panel.caption,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit,
+                        onLoading = {
+                            isLoading = true
+                            loadError = null
+                            android.util.Log.d("PanelView", "Loading image: ${panel.imageUrl}")
+                        },
+                        onError = { error ->
+                            isLoading = false
+                            loadError = error.result.throwable.message ?: "Unknown error"
+                            android.util.Log.e("PanelView", "Failed to load image: ${panel.imageUrl}", error.result.throwable)
+                        },
+                        onSuccess = {
+                            isLoading = false
+                            loadError = null
+                            android.util.Log.d("PanelView", "Successfully loaded image: ${panel.imageUrl}")
+                        }
+                    )
+                    
+                    // Show loading indicator
+                    if (isLoading) {
+                        CircularProgressIndicator()
+                    }
+                    
+                    // Show error message
+                    if (loadError != null) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Failed to load image",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Text(
+                                text = loadError ?: "",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            } else {
+                // Show placeholder if no image URL
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No image available",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
             if (panel.caption.isNotEmpty()) {
                 Text(
                     text = panel.caption,

@@ -1,5 +1,13 @@
 package com.example.dailydoodle.ui.screen.drawing
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,6 +27,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 @Composable
 fun ColorPickerDialog(
@@ -32,58 +41,76 @@ fun ColorPickerDialog(
     var showCustomColorPicker by remember { mutableStateOf(false) }
     
     if (showDialog) {
-        Dialog(onDismissRequest = onDismissRequest) {
-            Card(
-                modifier = modifier,
-                shape = MaterialTheme.shapes.large,
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+        Dialog(
+            onDismissRequest = onDismissRequest,
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            // Animated dialog content
+            AnimatedVisibility(
+                visible = true,
+                enter = scaleIn(
+                    initialScale = 0.85f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                ) + fadeIn(animationSpec = tween(150)),
+                exit = scaleOut(targetScale = 0.9f) + fadeOut(animationSpec = tween(100))
             ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Card(
+                    modifier = modifier
+                        .padding(horizontal = 24.dp)
+                        .widthIn(max = 400.dp),
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 ) {
-                    Text(
-                        text = "Select Color",
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                    
-                    // Standard colors
-                    Text(
-                        text = "Standard Colors",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    ColorGrid(
-                        colors = DrawingColors.standardColors,
-                        selectedColor = selectedColor,
-                        onColorSelected = onColorSelected,
-                        onCustomColorClick = { showCustomColorPicker = true }
-                    )
-                    
-                    // Premium colors section
-                    if (hasPremiumBrush) {
-                        HorizontalDivider()
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text(
-                            text = "Premium Colors",
+                            text = "Select Color",
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                        
+                        // Standard colors
+                        Text(
+                            text = "Standard Colors",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         ColorGrid(
-                            colors = DrawingColors.premiumColors,
+                            colors = DrawingColors.standardColors,
                             selectedColor = selectedColor,
                             onColorSelected = onColorSelected,
-                            showCustomButton = false
+                            onCustomColorClick = { showCustomColorPicker = true }
                         )
-                    }
-                    
-                    TextButton(
-                        onClick = onDismissRequest,
-                        modifier = Modifier.align(Alignment.End)
-                    ) {
-                        Text("Close")
+                        
+                        // Premium colors section
+                        if (hasPremiumBrush) {
+                            HorizontalDivider()
+                            Text(
+                                text = "Premium Colors",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            ColorGrid(
+                                colors = DrawingColors.premiumColors,
+                                selectedColor = selectedColor,
+                                onColorSelected = onColorSelected,
+                                showCustomButton = false
+                            )
+                        }
+                        
+                        TextButton(
+                            onClick = onDismissRequest,
+                            modifier = Modifier.align(Alignment.End)
+                        ) {
+                            Text("Close")
+                        }
                     }
                 }
             }
@@ -205,45 +232,62 @@ fun BrushSizeDialog(
     val sizes = listOf(2f, 5f, 10f, 15f, 20f, 25f, 30f)
     
     if (showDialog) {
-        Dialog(onDismissRequest = onDismissRequest) {
-            Card(
-                modifier = modifier,
-                shape = MaterialTheme.shapes.large,
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Brush Size",
-                        style = MaterialTheme.typography.headlineSmall
+        Dialog(
+            onDismissRequest = onDismissRequest,
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            AnimatedVisibility(
+                visible = true,
+                enter = scaleIn(
+                    initialScale = 0.85f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMediumLow
                     )
-                    
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(4),
-                        contentPadding = PaddingValues(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.heightIn(max = 150.dp)
+                ) + fadeIn(animationSpec = tween(150)),
+                exit = scaleOut(targetScale = 0.9f) + fadeOut(animationSpec = tween(100))
+            ) {
+                Card(
+                    modifier = modifier
+                        .padding(horizontal = 24.dp)
+                        .widthIn(max = 400.dp),
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        items(sizes) { size ->
-                            SizeSwatch(
-                                size = size,
-                                isSelected = size == currentSize,
-                                onClick = { onSizeSelected(size) }
-                            )
+                        Text(
+                            text = "Brush Size",
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                        
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(4),
+                            contentPadding = PaddingValues(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.heightIn(max = 150.dp)
+                        ) {
+                            items(sizes) { size ->
+                                SizeSwatch(
+                                    size = size,
+                                    isSelected = size == currentSize,
+                                    onClick = { onSizeSelected(size) }
+                                )
+                            }
                         }
-                    }
-                    
-                    TextButton(
-                        onClick = onDismissRequest,
-                        modifier = Modifier.align(Alignment.End)
-                    ) {
-                        Text("Close")
+                        
+                        TextButton(
+                            onClick = onDismissRequest,
+                            modifier = Modifier.align(Alignment.End)
+                        ) {
+                            Text("Close")
+                        }
                     }
                 }
             }

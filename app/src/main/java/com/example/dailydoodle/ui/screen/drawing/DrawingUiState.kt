@@ -39,6 +39,12 @@ data class DrawingUiState(
     /** Whether the panel is currently being uploaded */
     val isUploading: Boolean = false,
     
+    /** Upload progress from 0f to 1f */
+    val uploadProgress: Float = 0f,
+    
+    /** Current upload stage description */
+    val uploadStage: String = "",
+    
     /** Whether upload was successful */
     val isSuccess: Boolean = false,
     
@@ -49,7 +55,13 @@ data class DrawingUiState(
     val hasPremiumBrush: Boolean = false,
     
     /** Whether to show hint overlay (unlocked via rewarded ad) */
-    val showHintOverlay: Boolean = false
+    val showHintOverlay: Boolean = false,
+    
+    /** Custom panel size - width in pixels */
+    val panelWidth: Int = 1080,
+    
+    /** Custom panel size - height in pixels */
+    val panelHeight: Int = 1080
 ) {
     /**
      * Whether undo is available (has history to go back to).

@@ -8,6 +8,7 @@ data class User(
     val email: String = "",
     val avatarUrl: String = "",
     val streak: Int = 0,
+    val panelCount: Int = 0,
     val lastActive: Long = System.currentTimeMillis(),
     val createdAt: Long = System.currentTimeMillis()
 ) {

@@ -1,15 +1,24 @@
 package com.example.dailydoodle.ui.screen.feed
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.dailydoodle.R
 import com.example.dailydoodle.data.model.Chain
@@ -18,6 +27,7 @@ import com.example.dailydoodle.ui.admob.AdConfig
 import com.example.dailydoodle.ui.admob.AdMobManager
 import com.example.dailydoodle.ui.admob.NativeAdCard
 import com.example.dailydoodle.ui.components.ChainCard
+import com.example.dailydoodle.ui.components.TickerText
 import com.example.dailydoodle.ui.viewmodel.FeedViewModel
 import com.example.dailydoodle.ui.viewmodel.FeedUiState
 
@@ -79,30 +89,36 @@ fun FeedScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
+            // Kenko-style top bar with app name and settings
             TopAppBar(
-                title = { Text("Daily Doodle Chain") },
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_launcher_foreground),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                        )
+                        Text(
+                            text = "DAILYDOODLE",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                },
                 actions = {
-                    IconButton(onClick = onProfileClick) {
+                    FilledTonalIconButton(onClick = onProfileClick) {
                         Icon(
-                            painter = painterResource(R.drawable.ic_person),
-                            contentDescription = "Profile"
+                            imageVector = Icons.Outlined.Settings,
+                            contentDescription = "Settings",
                         )
                     }
                 }
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onCreateChainClick,
-                shape = RoundedCornerShape(16.dp),
-                containerColor = MaterialTheme.colorScheme.surface
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_add),
-                    contentDescription = "Create Chain",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            }
         }
     ) { padding ->
         Column(
@@ -110,6 +126,21 @@ fun FeedScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            // Scrolling marquee ticker at top
+            HorizontalDivider(
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+            )
+            TickerText(
+                texts = arrayOf("Create", "Draw", "Share", "Inspire", "Connect"),
+                color = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+            HorizontalDivider(
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+            )
+            
             // Filter tabs
             Row(
                 modifier = Modifier
@@ -144,12 +175,8 @@ fun FeedScreen(
                     }
                 }
                 is FeedUiState.Empty -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("No chains yet. Be the first to create one!")
-                    }
+                    // Kenko-style empty state with big headline
+                    EmptyFeedContent(onCreateChainClick = onCreateChainClick)
                 }
                 is FeedUiState.Success -> {
                     ChainList(
@@ -158,7 +185,8 @@ fun FeedScreen(
                         onChainClick = onChainClick,
                         onAddPanelClick = onAddPanelClick,
                         onDeleteClick = { chain -> chainToDelete = chain },
-                        onFavoriteClick = { chain -> viewModel.toggleFavorite(chain) }
+                        onFavoriteClick = { chain -> viewModel.toggleFavorite(chain) },
+                        onCreateChainClick = onCreateChainClick
                     )
                 }
                 is FeedUiState.Error -> {
@@ -174,6 +202,67 @@ fun FeedScreen(
     }
 }
 
+/**
+ * Kenko-style empty state with large headline and CTA button
+ */
+@Composable
+private fun ColumnScope.EmptyFeedContent(
+    onCreateChainClick: () -> Unit
+) {
+    Spacer(modifier = Modifier.weight(1f))
+    
+    // Large headline text
+    Text(
+        modifier = Modifier
+            .padding(horizontal = 24.dp),
+        text = "Start by Creating a Chain",
+        style = MaterialTheme.typography.displayLarge.copy(
+            fontSize = 64.sp,
+            lineHeight = 60.sp,
+            fontWeight = FontWeight.Bold,
+            lineBreak = LineBreak.Heading,
+        ),
+        color = MaterialTheme.colorScheme.primary,
+    )
+    
+    Spacer(modifier = Modifier.weight(1f))
+    
+    // Create Chain button
+    Button(
+        modifier = Modifier.align(Alignment.CenterHorizontally),
+        onClick = onCreateChainClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        ),
+        contentPadding = PaddingValues(
+            vertical = 20.dp,
+            horizontal = 32.dp,
+        ),
+        shape = RoundedCornerShape(50),
+    ) {
+        Text(
+            text = "Create Chain",
+            style = MaterialTheme.typography.titleMedium
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+            contentDescription = null,
+        )
+    }
+    
+    // Bottom tagline
+    Text(
+        text = "draw together",
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.outline,
+        modifier = Modifier
+            .align(Alignment.CenterHorizontally)
+            .padding(vertical = 24.dp),
+    )
+}
+
 @Composable
 fun ChainList(
     chains: List<Chain>,
@@ -181,33 +270,56 @@ fun ChainList(
     onChainClick: (String) -> Unit,
     onAddPanelClick: (String) -> Unit,
     onDeleteClick: (Chain) -> Unit,
-    onFavoriteClick: (Chain) -> Unit
+    onFavoriteClick: (Chain) -> Unit,
+    onCreateChainClick: () -> Unit
 ) {
     // Calculate positions where ads should appear
     // Per PRD: Native ads at position 4 and 12 (0-indexed: 3 and 11)
     val adPositions = AdConfig.NATIVE_AD_FEED_POSITIONS
     
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        itemsIndexed(chains) { index, chain ->
-            // Show native ad before this item if it's at an ad position
-            if (adPositions.contains(index) && !AdMobManager.isAdFreeUser()) {
-                NativeAdCard(
-                    modifier = Modifier.padding(bottom = 16.dp)
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            itemsIndexed(
+                items = chains,
+                key = { _, chain -> chain.id }
+            ) { index, chain ->
+                // Show native ad before this item if it's at an ad position
+                if (adPositions.contains(index) && !AdMobManager.isAdFreeUser()) {
+                    NativeAdCard(
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                }
+                
+                ChainCard(
+                    chain = chain,
+                    onClick = { onChainClick(chain.id) },
+                    onAddPanelClick = { onAddPanelClick(chain.id) },
+                    onDeleteClick = { onDeleteClick(chain) },
+                    onFavoriteClick = { onFavoriteClick(chain) },
+                    showActions = true,
+                    isOwner = chain.creatorId == currentUserId,
+                    modifier = Modifier.animateItem()
                 )
             }
-            
-            ChainCard(
-                chain = chain,
-                onClick = { onChainClick(chain.id) },
-                onAddPanelClick = { onAddPanelClick(chain.id) },
-                onDeleteClick = { onDeleteClick(chain) },
-                onFavoriteClick = { onFavoriteClick(chain) },
-                showActions = true,
-                isOwner = chain.creatorId == currentUserId
+        }
+        
+        // Floating action button
+        FloatingActionButton(
+            onClick = onCreateChainClick,
+            shape = RoundedCornerShape(16.dp),
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_add),
+                contentDescription = "Create Chain",
+                tint = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
     }

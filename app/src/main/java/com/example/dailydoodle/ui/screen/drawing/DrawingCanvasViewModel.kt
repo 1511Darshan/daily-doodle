@@ -1,8 +1,12 @@
 package com.example.dailydoodle.ui.screen.drawing
 
 import android.graphics.Bitmap
+import android.graphics.Path
+import android.graphics.RectF
+import android.graphics.Region
 import android.util.Log
 import androidx.annotation.ColorInt
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.ink.brush.Brush
@@ -36,6 +40,7 @@ class DrawingCanvasViewModel(
         private const val DEFAULT_STROKE_SIZE = 5f
         private const val DEFAULT_EPSILON = 0.1f
         private const val MAX_UNDO_HISTORY = 50
+        private const val ERASER_STROKE_WIDTH = 30f // Width of eraser path
     }
 
     private val _uiState = MutableStateFlow(DrawingUiState())
@@ -43,6 +48,13 @@ class DrawingCanvasViewModel(
 
     // Current brush instance (recreated when color/size changes)
     private var currentBrush: Brush? = null
+    
+    // Eraser path points collected during erasing
+    private val eraserPathPoints = mutableListOf<Offset>()
+    
+    // Flow for eraser path visualization
+    private val _eraserPath = MutableStateFlow<List<Offset>>(emptyList())
+    val eraserPath: StateFlow<List<Offset>> = _eraserPath.asStateFlow()
 
     // Flows for UI binding
     private val _canUndo = MutableStateFlow(false)
@@ -122,24 +134,105 @@ class DrawingCanvasViewModel(
     }
 
     /**
-     * Erase stroke at the specified position.
+     * Add eraser point during drag.
+     * Points are collected and strokes are erased when drag ends.
      */
     fun erase(offsetX: Float, offsetY: Float) {
+        eraserPathPoints.add(Offset(offsetX, offsetY))
+        _eraserPath.value = eraserPathPoints.toList()
+    }
+
+    /**
+     * Check if a stroke intersects with the eraser path.
+     */
+    private fun strokeIntersectsEraserPath(stroke: Stroke, eraserPath: Path): Boolean {
+        val strokeBox = stroke.shape.computeBoundingBox() ?: return false
+        
+        // Create a region from the eraser path
+        val eraserBounds = RectF()
+        eraserPath.computeBounds(eraserBounds, true)
+        
+        // Expand bounds for intersection check
+        val eraserRegion = Region()
+        eraserRegion.setPath(
+            eraserPath,
+            Region(
+                eraserBounds.left.toInt() - 10,
+                eraserBounds.top.toInt() - 10,
+                eraserBounds.right.toInt() + 10,
+                eraserBounds.bottom.toInt() + 10
+            )
+        )
+        
+        // Create a region from the stroke bounding box
+        val strokeRegion = Region(
+            strokeBox.xMin.toInt(),
+            strokeBox.yMin.toInt(),
+            strokeBox.xMax.toInt(),
+            strokeBox.yMax.toInt()
+        )
+        
+        // Check if regions intersect
+        return !eraserRegion.quickReject(strokeRegion) && eraserRegion.op(strokeRegion, Region.Op.INTERSECT)
+    }
+
+    /**
+     * Called when eraser drag starts.
+     */
+    fun startErase() {
+        eraserPathPoints.clear()
+        _eraserPath.value = emptyList()
+    }
+
+    /**
+     * Called when eraser drag ends.
+     * This is where we actually remove the intersecting strokes.
+     */
+    fun endErase() {
+        if (eraserPathPoints.size < 2) {
+            eraserPathPoints.clear()
+            _eraserPath.value = emptyList()
+            return
+        }
+        
+        // Build a Path from eraser points with stroke width
+        val eraserPath = Path().apply {
+            val firstPoint = eraserPathPoints.first()
+            moveTo(firstPoint.x, firstPoint.y)
+            
+            for (i in 1 until eraserPathPoints.size) {
+                val point = eraserPathPoints[i]
+                lineTo(point.x, point.y)
+            }
+        }
+        
+        // Create a stroked version of the path for wider hit detection
+        val strokedPath = Path()
+        val paint = android.graphics.Paint().apply {
+            style = android.graphics.Paint.Style.STROKE
+            strokeWidth = ERASER_STROKE_WIDTH
+            strokeCap = android.graphics.Paint.Cap.ROUND
+            strokeJoin = android.graphics.Paint.Join.ROUND
+        }
+        paint.getFillPath(eraserPath, strokedPath)
+        
         _uiState.update { state ->
-            // Find stroke at position and remove it
-            val strokeToRemove = state.strokes.find { stroke ->
-                // Simple hit test - check if any point is within eraser radius
-                // This is a simplified version - production would use proper geometry
-                isStrokeAtPosition(stroke, offsetX, offsetY, eraserRadius = 20f)
+            // Find strokes that intersect with eraser path
+            val strokesToRemove = state.strokes.filter { stroke ->
+                strokeIntersectsEraserPath(stroke, strokedPath)
             }
             
-            if (strokeToRemove != null) {
+            if (strokesToRemove.isNotEmpty()) {
                 val newUndoStack = (state.undoStack + listOf(state.strokes))
                     .takeLast(MAX_UNDO_HISTORY)
                 
-                val newStrokes = state.strokes - strokeToRemove
+                val newStrokes = state.strokes - strokesToRemove.toSet()
                 _strokesFlow.value = newStrokes
                 _canUndo.value = newUndoStack.isNotEmpty()
+                
+                // Clear eraser path
+                eraserPathPoints.clear()
+                _eraserPath.value = emptyList()
                 
                 state.copy(
                     strokes = newStrokes,
@@ -148,27 +241,12 @@ class DrawingCanvasViewModel(
                     hasUnsavedChanges = true
                 )
             } else {
+                // Clear eraser path even if nothing was erased
+                eraserPathPoints.clear()
+                _eraserPath.value = emptyList()
                 state
             }
         }
-    }
-
-    private fun isStrokeAtPosition(stroke: Stroke, x: Float, y: Float, eraserRadius: Float): Boolean {
-        // Simplified hit test - in production, use proper geometry from Ink API
-        // Check the stroke's bounding box as a simple approximation
-        val box = stroke.shape.computeBoundingBox() ?: return false
-        return x >= box.xMin - eraserRadius && 
-               x <= box.xMax + eraserRadius && 
-               y >= box.yMin - eraserRadius && 
-               y <= box.yMax + eraserRadius
-    }
-
-    fun startErase() {
-        // Called when eraser drag starts
-    }
-
-    fun endErase() {
-        // Called when eraser drag ends
     }
 
     /**
@@ -340,6 +418,13 @@ class DrawingCanvasViewModel(
     }
 
     /**
+     * Set custom panel size.
+     */
+    fun setPanelSize(width: Int, height: Int) {
+        _uiState.update { it.copy(panelWidth = width, panelHeight = height) }
+    }
+
+    /**
      * Submit the panel to the chain.
      * Uploads to both local storage and the backend server.
      */
@@ -351,7 +436,17 @@ class DrawingCanvasViewModel(
         caption: String = ""
     ) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isUploading = true) }
+            _uiState.update { 
+                it.copy(
+                    isUploading = true, 
+                    uploadProgress = 0f,
+                    uploadStage = "Preparing image..."
+                ) 
+            }
+            
+            // Simulate preparation delay for visual feedback
+            kotlinx.coroutines.delay(300)
+            _uiState.update { it.copy(uploadProgress = 0.15f, uploadStage = "Uploading to storage...") }
             
             // Upload to local storage first
             val uploadResult = storageRepository.uploadPanelImage(bitmap, authorId, chainId)
@@ -360,32 +455,23 @@ class DrawingCanvasViewModel(
                 _uiState.update { 
                     it.copy(
                         isUploading = false,
+                        uploadProgress = 0f,
                         errorMessage = uploadResult.exceptionOrNull()?.message ?: "Upload failed"
                     )
                 }
                 return@launch
             }
+            
+            _uiState.update { it.copy(uploadProgress = 0.5f, uploadStage = "Storage upload complete...") }
 
             val imageUrl = uploadResult.getOrNull() ?: run {
                 _uiState.update { 
-                    it.copy(isUploading = false, errorMessage = "Upload failed")
+                    it.copy(isUploading = false, uploadProgress = 0f, errorMessage = "Upload failed")
                 }
                 return@launch
             }
-
-            // Also upload to backend server (for testing/sharing)
-            try {
-                val serverResult = uploadRepository.uploadPanel(bitmap, chainId, authorId)
-                if (serverResult.isSuccess) {
-                    val response = serverResult.getOrNull()
-                    Log.d(TAG, "Server upload successful: ${response?.imageUrl}")
-                } else {
-                    Log.w(TAG, "Server upload failed (non-critical): ${serverResult.exceptionOrNull()?.message}")
-                }
-            } catch (e: Exception) {
-                // Server upload is non-critical, log and continue
-                Log.w(TAG, "Server upload error (non-critical): ${e.message}")
-            }
+            
+            _uiState.update { it.copy(uploadProgress = 0.7f, uploadStage = "Saving to database...") }
 
             // Add panel to Firestore
             val panelResult = panelRepository.addPanel(
@@ -397,12 +483,15 @@ class DrawingCanvasViewModel(
             )
 
             if (panelResult.isSuccess) {
+                _uiState.update { it.copy(uploadProgress = 1f, uploadStage = "Complete!") }
+                kotlinx.coroutines.delay(200) // Brief delay before showing success
                 com.example.dailydoodle.util.Analytics.logPanelAdded(chainId)
                 _uiState.update { it.copy(isUploading = false, isSuccess = true) }
             } else {
                 _uiState.update { 
                     it.copy(
                         isUploading = false,
+                        uploadProgress = 0f,
                         errorMessage = panelResult.exceptionOrNull()?.message ?: "Failed to add panel"
                     )
                 }

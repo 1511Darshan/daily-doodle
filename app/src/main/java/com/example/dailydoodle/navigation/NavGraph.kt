@@ -373,6 +373,13 @@ fun NavGraph(
                 },
                 onAboutClick = {
                     navController.navigate(Screen.SettingsAbout.route)
+                },
+                onSignOutClick = {
+                    // Sign out and navigate to login screen
+                    com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                    navController.navigate(Screen.SignUp.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             )
         }
