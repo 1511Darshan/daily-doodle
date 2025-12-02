@@ -33,4 +33,12 @@ object AppModule {
     val moderationRepository: ModerationRepository by lazy {
         ModerationRepository(firestore)
     }
+    
+    val trashRepository: TrashRepository by lazy {
+        TrashRepository(firestore)
+    }
+    
+    val favoritesRepository: FavoritesRepository by lazy {
+        FavoritesRepository(firestore)
+    }
 }

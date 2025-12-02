@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.dailydoodle.data.model.Chain
 import com.example.dailydoodle.data.repository.ChainFilter
 import com.example.dailydoodle.data.repository.ChainRepository
+import com.example.dailydoodle.data.repository.TrashRepository
 import com.example.dailydoodle.di.AppModule
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 
 class FeedViewModel(
     private val chainRepository: ChainRepository = AppModule.chainRepository,
+    private val trashRepository: TrashRepository = AppModule.trashRepository,
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) : ViewModel() {
 
@@ -89,7 +91,8 @@ class FeedViewModel(
     fun deleteChain(chain: Chain) {
         val userId = auth.currentUser?.uid ?: ""
         viewModelScope.launch {
-            chainRepository.deleteChain(chain.id, userId)
+            // Move to trash instead of permanent deletion
+            trashRepository.moveToTrash(chain.id, userId)
                 .onSuccess {
                     // Remove chain from UI state
                     val currentState = _uiState.value
@@ -103,7 +106,7 @@ class FeedViewModel(
                     }
                 }
                 .onFailure { error ->
-                    _deleteError.value = error.message ?: "Failed to delete chain"
+                    _deleteError.value = error.message ?: "Failed to move to trash"
                 }
         }
     }

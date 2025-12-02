@@ -23,6 +23,7 @@ import com.example.dailydoodle.ui.screen.auth.TermsOfServiceScreen
 import com.example.dailydoodle.ui.screen.chain.ChainViewerScreen
 import com.example.dailydoodle.ui.screen.create.CreateChainScreen
 import com.example.dailydoodle.ui.screen.drawing.DrawingScreen
+import com.example.dailydoodle.ui.screen.favorites.FavoritesScreen
 import com.example.dailydoodle.ui.screen.feed.FeedScreen
 import com.example.dailydoodle.ui.screen.onboarding.OnboardingScreen
 import com.example.dailydoodle.ui.screen.profile.ProfileScreen
@@ -31,6 +32,7 @@ import com.example.dailydoodle.ui.screen.settings.AccessibilitySettingsScreen
 import com.example.dailydoodle.ui.screen.settings.SettingsScreen
 import com.example.dailydoodle.ui.screen.settings.ThemeSettingsScreen
 import com.example.dailydoodle.ui.screen.shop.ShopScreen
+import com.example.dailydoodle.ui.screen.trash.TrashScreen
 import com.example.dailydoodle.ui.viewmodel.AuthUiState
 import com.example.dailydoodle.ui.viewmodel.AuthViewModel
 
@@ -53,6 +55,8 @@ sealed class Screen(val route: String) {
     object CreateChain : Screen("create_chain")
     object Profile : Screen("profile")
     object Shop : Screen("shop")
+    object Favorites : Screen("favorites")
+    object Trash : Screen("trash")
     object Settings : Screen("settings")
     object SettingsTheme : Screen("settings/theme")
     object SettingsAccessibility : Screen("settings/accessibility")
@@ -350,6 +354,30 @@ fun NavGraph(
         
         composable(Screen.Shop.route) {
             ShopScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        // Favorites screen
+        composable(Screen.Favorites.route) {
+            FavoritesScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onChainClick = { chainId ->
+                    navController.navigate(Screen.ChainViewer.createRoute(chainId))
+                },
+                onAddPanelClick = { chainId ->
+                    navController.navigate(Screen.Drawing.createRoute(chainId))
+                }
+            )
+        }
+        
+        // Trash screen
+        composable(Screen.Trash.route) {
+            TrashScreen(
                 onBackClick = {
                     navController.popBackStack()
                 }

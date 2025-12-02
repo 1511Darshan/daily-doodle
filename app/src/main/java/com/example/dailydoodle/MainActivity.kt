@@ -15,10 +15,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.dailydoodle.navigation.NavGraph
 import com.example.dailydoodle.navigation.Screen
 import com.example.dailydoodle.ui.admob.AdMobManager
+import com.example.dailydoodle.ui.components.navigation.BottomAppBarProvider
+import com.example.dailydoodle.ui.components.navigation.NavigationSection
 import com.example.dailydoodle.ui.screen.settings.ColorPalette
 import com.example.dailydoodle.ui.theme.DailyDoodleTheme
 import com.example.dailydoodle.ui.theme.ThemeMode
@@ -71,6 +74,25 @@ fun DailyDoodleApp() {
     val navController = rememberNavController()
     val authViewModel = androidx.lifecycle.viewmodel.compose.viewModel<AuthViewModel>()
     val authState by authViewModel.uiState.collectAsState()
+    
+    // Track current route for bottom navigation visibility
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    
+    // Current navigation section based on route
+    val currentSection = when (currentRoute) {
+        Screen.Feed.route -> NavigationSection.MAIN
+        Screen.Favorites.route -> NavigationSection.ARCHIVE
+        Screen.Trash.route -> NavigationSection.TRASH
+        else -> NavigationSection.MAIN
+    }
+    
+    // Determine if bottom bar should be visible (only on main screens)
+    val showBottomBar = currentRoute in listOf(
+        Screen.Feed.route,
+        Screen.Favorites.route,
+        Screen.Trash.route,
+    )
     
     // Google Sign-In configuration
     val gso = remember {
@@ -129,10 +151,43 @@ fun DailyDoodleApp() {
         else -> Screen.Onboarding.route  // Show onboarding for new/logged-out users
     }
 
-    NavGraph(
-        navController = navController,
-        startDestination = startDestination,
-        onGoogleSignIn = onGoogleSignIn,
-        onSkipAuth = onSkipAuth
-    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        NavGraph(
+            navController = navController,
+            startDestination = startDestination,
+            onGoogleSignIn = onGoogleSignIn,
+            onSkipAuth = onSkipAuth
+        )
+        
+        // Bottom navigation bar - only visible on main screens
+        if (showBottomBar) {
+            BottomAppBarProvider(
+                currentSection = currentSection,
+                onSectionSelected = { section ->
+                    when (section) {
+                        NavigationSection.MAIN -> {
+                            if (currentRoute != Screen.Feed.route) {
+                                navController.navigate(Screen.Feed.route) {
+                                    popUpTo(Screen.Feed.route) { inclusive = true }
+                                }
+                            }
+                        }
+                        NavigationSection.ARCHIVE -> {
+                            navController.navigate(Screen.Favorites.route)
+                        }
+                        NavigationSection.TRASH -> {
+                            navController.navigate(Screen.Trash.route)
+                        }
+                        NavigationSection.SETTINGS -> {
+                            navController.navigate(Screen.Settings.route)
+                        }
+                    }
+                },
+                onCreateClick = {
+                    navController.navigate(Screen.CreateChain.route)
+                },
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
+    }
 }

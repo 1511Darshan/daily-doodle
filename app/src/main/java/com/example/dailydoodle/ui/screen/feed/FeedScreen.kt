@@ -1,5 +1,6 @@
 package com.example.dailydoodle.ui.screen.feed
 
+import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineBreak
@@ -28,8 +30,12 @@ import com.example.dailydoodle.ui.admob.AdMobManager
 import com.example.dailydoodle.ui.admob.NativeAdCard
 import com.example.dailydoodle.ui.components.ChainCard
 import com.example.dailydoodle.ui.components.TickerText
+import com.example.dailydoodle.ui.components.onboarding.OnboardingDialog
 import com.example.dailydoodle.ui.viewmodel.FeedViewModel
 import com.example.dailydoodle.ui.viewmodel.FeedUiState
+
+private const val PREFS_NAME = "dailydoodle_prefs"
+private const val KEY_HAS_SEEN_ONBOARDING = "has_seen_onboarding_dialog"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,10 +46,17 @@ fun FeedScreen(
     onProfileClick: () -> Unit,
     viewModel: FeedViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
     val deleteError by viewModel.deleteError.collectAsState()
     val currentUserId = viewModel.getCurrentUserId()
+    
+    // Onboarding dialog state
+    val prefs = remember { context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) }
+    var showOnboardingDialog by remember { 
+        mutableStateOf(!prefs.getBoolean(KEY_HAS_SEEN_ONBOARDING, false)) 
+    }
     
     // Delete confirmation dialog state
     var chainToDelete by remember { mutableStateOf<Chain?>(null) }
@@ -57,6 +70,20 @@ fun FeedScreen(
             snackbarHostState.showSnackbar(error)
             viewModel.clearDeleteError()
         }
+    }
+    
+    // Onboarding dialog
+    if (showOnboardingDialog) {
+        OnboardingDialog(
+            onDismiss = {
+                showOnboardingDialog = false
+                prefs.edit().putBoolean(KEY_HAS_SEEN_ONBOARDING, true).apply()
+            },
+            onFinish = {
+                showOnboardingDialog = false
+                prefs.edit().putBoolean(KEY_HAS_SEEN_ONBOARDING, true).apply()
+            }
+        )
     }
 
     // Delete confirmation dialog
@@ -97,11 +124,10 @@ fun FeedScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Image(
-                            painter = painterResource(R.drawable.ic_launcher_foreground),
+                            painter = painterResource(R.drawable.ic_app_logo),
                             contentDescription = null,
                             modifier = Modifier
                                 .size(40.dp)
-                                .clip(CircleShape)
                         )
                         Text(
                             text = "DAILYDOODLE",
@@ -277,49 +303,36 @@ fun ChainList(
     // Per PRD: Native ads at position 4 and 12 (0-indexed: 3 and 11)
     val adPositions = AdConfig.NATIVE_AD_FEED_POSITIONS
     
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            itemsIndexed(
-                items = chains,
-                key = { _, chain -> chain.id }
-            ) { index, chain ->
-                // Show native ad before this item if it's at an ad position
-                if (adPositions.contains(index) && !AdMobManager.isAdFreeUser()) {
-                    NativeAdCard(
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                }
-                
-                ChainCard(
-                    chain = chain,
-                    onClick = { onChainClick(chain.id) },
-                    onAddPanelClick = { onAddPanelClick(chain.id) },
-                    onDeleteClick = { onDeleteClick(chain) },
-                    onFavoriteClick = { onFavoriteClick(chain) },
-                    showActions = true,
-                    isOwner = chain.creatorId == currentUserId,
-                    modifier = Modifier.animateItem()
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = 16.dp,
+            bottom = 100.dp // Extra padding for bottom navigation bar
+        ),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        itemsIndexed(
+            items = chains,
+            key = { _, chain -> chain.id }
+        ) { index, chain ->
+            // Show native ad before this item if it's at an ad position
+            if (adPositions.contains(index) && !AdMobManager.isAdFreeUser()) {
+                NativeAdCard(
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
             }
-        }
-        
-        // Floating action button
-        FloatingActionButton(
-            onClick = onCreateChainClick,
-            shape = RoundedCornerShape(16.dp),
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_add),
-                contentDescription = "Create Chain",
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
+            
+            ChainCard(
+                chain = chain,
+                onClick = { onChainClick(chain.id) },
+                onAddPanelClick = { onAddPanelClick(chain.id) },
+                onDeleteClick = { onDeleteClick(chain) },
+                onFavoriteClick = { onFavoriteClick(chain) },
+                showActions = true,
+                isOwner = chain.creatorId == currentUserId,
+                modifier = Modifier.animateItem()
             )
         }
     }
