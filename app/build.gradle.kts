@@ -122,6 +122,9 @@ dependencies {
     // DataStore Preferences
     implementation(libs.datastore.preferences)
     
+    // Konfetti for celebrations
+    implementation("nl.dionsegijn:konfetti-compose:2.0.4")
+    
     // Pager (Accompanist)
     implementation(libs.accompanist.pager)
     implementation(libs.accompanist.drawablepainter)
