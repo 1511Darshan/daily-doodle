@@ -4,12 +4,25 @@ A lightweight social creativity app where each user contributes exactly one pane
 
 ## Features
 
+### Core Features
 - **Frictionless Sign-In**: Firebase Auth with email and Google sign-in
 - **Create & Join Chains**: View seed prompts, create chains, or add panels to open chains
 - **Drawing Canvas**: Minimal drawing interface with brush, color palette, undo, clear, and save draft
 - **Feed**: Browse recent, popular, and featured chains with pagination
 - **Chain Viewer**: Swipe through panels in a chain
 - **Sharing**: Share completed chains as images
+
+### Navigation & Organization
+- **Bottom Navigation Bar**: Shkiper-style animated bottom navigation with sliding circle indicator
+- **Favorites**: Star your favorite chains for quick access
+- **Trash/Recycle Bin**: Soft delete with 30-day retention and restore capability
+- **Settings**: Customizable app preferences and About section
+
+### Onboarding
+- **Beautiful Onboarding Flow**: Three-screen onboarding with Lottie animations
+- **Welcome, Create & Share, Join the Community**: Engaging introduction to app features
+
+### Monetization & Analytics
 - **AdMob Integration**: Rewarded ads (hint unlock), interstitial ads, and banner/native ads
 - **Moderation**: Report button per panel and basic profanity filtering
 - **Analytics**: Firebase Analytics tracking for key events
@@ -17,11 +30,12 @@ A lightweight social creativity app where each user contributes exactly one pane
 ## Tech Stack
 
 - **Language**: Kotlin
-- **UI**: Jetpack Compose
+- **UI**: Jetpack Compose with Material 3
 - **Backend**: Firebase (Auth, Firestore, Storage, Analytics, Crashlytics)
-- **Ads**: AdMob (Rewarded, Interstitial, Banner/Native)
 - **Image Loading**: Coil
-- **Navigation**: Navigation Compose
+- **Animations**: Lottie for onboarding animations
+- **Navigation**: Navigation Compose with custom animated bottom bar
+- **Dependency Injection**: Hilt
 
 ## Setup Instructions
 
@@ -64,14 +78,24 @@ A lightweight social creativity app where each user contributes exactly one pane
 ```
 app/src/main/java/com/example/dailydoodle/
 ├── data/
-│   ├── model/          # Data models (User, Chain, Panel, etc.)
-│   └── repository/     # Repository classes for data access
-├── di/                 # Dependency injection
-├── navigation/         # Navigation setup
+│   ├── model/          # Data models (User, Chain, Panel, DeletedChain, etc.)
+│   └── repository/     # Repository classes (ChainRepository, TrashRepository, FavoritesRepository)
+├── di/                 # Dependency injection (Hilt modules)
+├── navigation/         # Navigation setup (NavGraph, Routes)
 ├── ui/
-│   ├── screen/         # UI screens (Auth, Feed, Drawing, etc.)
+│   ├── components/     # Reusable UI components
+│   │   └── navigation/ # Bottom navigation bar components
+│   ├── screen/         # UI screens
+│   │   ├── auth/       # Authentication screens
+│   │   ├── canvas/     # Drawing canvas
+│   │   ├── chain/      # Chain viewer
+│   │   ├── favorites/  # Favorites screen
+│   │   ├── feed/       # Main feed
+│   │   ├── onboarding/ # Onboarding flow
+│   │   ├── settings/   # Settings & About
+│   │   └── trash/      # Trash/Recycle bin
 │   ├── viewmodel/      # ViewModels
-│   └── theme/          # App theme
+│   └── theme/          # App theme (Material 3)
 ├── util/               # Utility classes (Analytics, etc.)
 └── admob/              # AdMob integration
 ```
@@ -170,16 +194,20 @@ The app tracks the following events via Firebase Analytics:
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
+## Author
+
+**Made by Darshan K** 💜
+
+- 📧 Email: [rushdarshan@gmail.com](mailto:rushdarshan@gmail.com)
+- 🐙 GitHub: [github.com/1511Darshan/daily-doodle](https://github.com/1511Darshan/daily-doodle)
+
 ## Contributing
 
 This is a contest submission project. For contributions, please follow the Apache 2.0 license terms.
-
-## Contact
-
-For questions or issues, please open an issue in the repository.
 
 ## Acknowledgments
 
 - Firebase team for excellent backend services
 - Jetpack Compose team for modern UI framework
+- Lottie for beautiful animations
 - AdMob for monetization platform
